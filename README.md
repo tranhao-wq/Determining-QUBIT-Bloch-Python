@@ -1,4 +1,10 @@
 # Determining-QUBIT-Bloch-Python
+
+<img width="1524" height="831" alt="image" src="https://github.com/user-attachments/assets/7620e8dd-2818-4319-9a04-0fc3e6c1a045" />
+<img width="743" height="719" alt="image" src="https://github.com/user-attachments/assets/d583c45a-42d8-413f-b932-57e3d9745937" />
+<img width="300" height="216" alt="image" src="https://github.com/user-attachments/assets/3e4fa534-f380-48a9-ad7a-36c822bdbd69" />
+<img width="276" height="284" alt="image" src="https://github.com/user-attachments/assets/2bdd4163-29a7-4435-8f8a-f8f1e7beeb84" />
+
 # Bloch Sphere Interactive Visualization
 
 This project provides an interactive 3D visualization of a qubit state on the Bloch sphere using Plotly and ipywidgets.
