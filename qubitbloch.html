@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hình Cầu Bloch 3D Tương Tác</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f0f0f, #1a1a2e, #16213e);
+            color: white;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+            background: transparent;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-track {
+            background: linear-gradient(90deg, #333, #666);
+            height: 6px;
+            border-radius: 3px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .value-display {
+            color: #00ff88;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .coordinates {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid #00d4ff;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .state-vector {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .preset-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(238, 90, 82, 0.4);
+        }
+
+        #canvas {
+            display: block;
+        }
+
+        h3 {
+            margin-top: 0;
+            color: #00d4ff;
+            text-align: center;
+        }
+
+        .math {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="controls">
+            <h3>🎛️ Điều Khiển Qubit</h3>
+            
+            <div class="control-group">
+                <label for="theta">Góc θ (Theta): <span class="value-display" id="theta-value">1.57</span> rad</label>
+                <input type="range" id="theta" min="0" max="3.14159" step="0.01" value="1.57">
+            </div>
+            
+            <div class="control-group">
+                <label for="phi">Góc φ (Phi): <span class="value-display" id="phi-value">0.00</span> rad</label>
+                <input type="range" id="phi" min="0" max="6.28318" step="0.01" value="0">
+            </div>
+
+            <div class="preset-buttons">
+                <button class="preset-btn" onclick="setPreset(0, 0)">|0⟩</button>
+                <button class="preset-btn" onclick="setPreset(Math.PI, 0)">|1⟩</button>
+                <button class="preset-btn" onclick="setPreset(Math.PI/2, 0)">|+⟩</button>
+                <button class="preset-btn" onclick="setPreset(Math.PI/2, Math.PI)">|-⟩</button>
+                <button class="preset-btn" onclick="setPreset(Math.PI/2, Math.PI/2)">|+i⟩</button>
+                <button class="preset-btn" onclick="setPreset(Math.PI/2, 3*Math.PI/2)">|-i⟩</button>
+            </div>
+        </div>
+
+        <div id="info">
+            <h3>📊 Thông Tin Qubit</h3>
+            
+            <div class="coordinates">
+                <strong>Tọa độ Bloch:</strong><br>
+                <span class="math">
+                    x = <span id="x-coord">1.000</span><br>
+                    y = <span id="y-coord">0.000</span><br>
+                    z = <span id="z-coord">0.000</span>
+                </span>
+            </div>
+
+            <div class="state-vector">
+                <strong>Trạng thái |ψ⟩:</strong><br>
+                <span class="math" id="state-display">
+                    0.707|0⟩ + 0.707|1⟩
+                </span>
+            </div>
+
+            <div style="font-size: 12px; margin-top: 15px; opacity: 0.8;">
+                <strong>Hướng dẫn:</strong><br>
+                • Kéo chuột để xoay<br>
+                • Scroll để zoom<br>
+                • Sử dụng thanh trượt để điều chỉnh góc
+            </div>
+        </div>
+
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Khởi tạo scene, camera, renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000014);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Ánh sáng
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 5, 5);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+
+        const pointLight1 = new THREE.PointLight(0x00d4ff, 0.6, 10);
+        pointLight1.position.set(3, 3, 3);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0x00ff88, 0.4, 10);
+        pointLight2.position.set(-3, -3, -3);
+        scene.add(pointLight2);
+
+        // Tạo hình cầu Bloch (wireframe)
+        const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const sphereMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00d4ff,
+            wireframe: true,
+            opacity: 0.3,
+            transparent: true
+        });
+        const blochSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        scene.add(blochSphere);
+
+        // Tạo mặt cầu bán trong suốt
+        const solidSphereMaterial = new THREE.MeshPhongMaterial({
+            color: 0x001122,
+            opacity: 0.1,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        const solidSphere = new THREE.Mesh(sphereGeometry, solidSphereMaterial);
+        scene.add(solidSphere);
+
+        // Tạo các trục tọa độ
+        const axisLength = 1.5;
+        
+        // Trục X (đỏ)
+        const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-axisLength, 0, 0),
+            new THREE.Vector3(axisLength, 0, 0)
+        ]);
+        const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0xff4444 });
+        const xAxis = new THREE.Line(xAxisGeometry, xAxisMaterial);
+        scene.add(xAxis);
+
+        // Trục Y (xanh lá)
+        const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, -axisLength, 0),
+            new THREE.Vector3(0, axisLength, 0)
+        ]);
+        const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x44ff44 });
+        const yAxis = new THREE.Line(yAxisGeometry, yAxisMaterial);
+        scene.add(yAxis);
+
+        // Trục Z (xanh dương)
+        const zAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, -axisLength),
+            new THREE.Vector3(0, 0, axisLength)
+        ]);
+        const zAxisMaterial = new THREE.LineBasicMaterial({ color: 0x4444ff });
+        const zAxis = new THREE.Line(zAxisGeometry, zAxisMaterial);
+        scene.add(zAxis);
+
+        // Tạo điểm qubit
+        const qubitGeometry = new THREE.SphereGeometry(0.05, 16, 16);
+        const qubitMaterial = new THREE.MeshPhongMaterial({
+            color: 0xff6b6b,
+            emissive: 0x331111
+        });
+        const qubitPoint = new THREE.Mesh(qubitGeometry, qubitMaterial);
+        scene.add(qubitPoint);
+
+        // Tạo vector từ tâm đến điểm qubit
+        let qubitVector;
+        const vectorGeometry = new THREE.BufferGeometry();
+        const vectorMaterial = new THREE.LineBasicMaterial({
+            color: 0xffff00,
+            linewidth: 3
+        });
+        qubitVector = new THREE.Line(vectorGeometry, vectorMaterial);
+        scene.add(qubitVector);
+
+        // Tạo labels cho các trục
+        function createTextSprite(message, color = 0xffffff) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            context.font = 'Bold 40px Arial';
+            context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+            context.fillText(message, 0, 40);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(0.3, 0.3, 0.3);
+            return sprite;
+        }
+
+        // Thêm labels
+        const xLabel = createTextSprite('X', 0xff4444);
+        xLabel.position.set(1.3, 0, 0);
+        scene.add(xLabel);
+
+        const yLabel = createTextSprite('Y', 0x44ff44);
+        yLabel.position.set(0, 1.3, 0);
+        scene.add(yLabel);
+
+        const zLabel = createTextSprite('Z', 0x4444ff);
+        zLabel.position.set(0, 0, 1.3);
+        scene.add(zLabel);
+
+        // Thêm labels cho trạng thái cơ bản
+        const state0Label = createTextSprite('|0⟩', 0xffffff);
+        state0Label.position.set(0, 0, 1.15);
+        scene.add(state0Label);
+
+        const state1Label = createTextSprite('|1⟩', 0xffffff);
+        state1Label.position.set(0, 0, -1.15);
+        scene.add(state1Label);
+
+        // Đặt vị trí camera
+        camera.position.set(3, 3, 3);
+        camera.lookAt(0, 0, 0);
+
+        // Điều khiển chuột
+        let mouseX = 0, mouseY = 0;
+        let isMouseDown = false;
+        let cameraDistance = 5;
+
+        document.addEventListener('mousedown', (event) => {
+            isMouseDown = true;
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        document.addEventListener('mousemove', (event) => {
+            if (isMouseDown) {
+                const deltaX = event.clientX - mouseX;
+                const deltaY = event.clientY - mouseY;
+                
+                const spherical = new THREE.Spherical();
+                spherical.setFromVector3(camera.position);
+                
+                spherical.theta -= deltaX * 0.01;
+                spherical.phi += deltaY * 0.01;
+                spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+                
+                camera.position.setFromSpherical(spherical);
+                camera.lookAt(0, 0, 0);
+                
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            }
+        });
+
+        document.addEventListener('wheel', (event) => {
+            cameraDistance += event.deltaY * 0.01;
+            cameraDistance = Math.max(2, Math.min(10, cameraDistance));
+            
+            const spherical = new THREE.Spherical();
+            spherical.setFromVector3(camera.position);
+            spherical.radius = cameraDistance;
+            camera.position.setFromSpherical(spherical);
+        });
+
+        // Biến toàn cục
+        let theta = Math.PI / 2;
+        let phi = 0;
+
+        // Cập nhật hiển thị
+        function updateDisplay() {
+            // Tính tọa độ Bloch
+            const x = Math.sin(theta) * Math.cos(phi);
+            const y = Math.sin(theta) * Math.sin(phi);
+            const z = Math.cos(theta);
+
+            // Cập nhật vị trí điểm qubit
+            qubitPoint.position.set(x, y, z);
+
+            // Cập nhật vector
+            const points = [
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(x, y, z)
+            ];
+            vectorGeometry.setFromPoints(points);
+
+            // Cập nhật hiển thị số liệu
+            document.getElementById('x-coord').textContent = x.toFixed(3);
+            document.getElementById('y-coord').textContent = y.toFixed(3);
+            document.getElementById('z-coord').textContent = z.toFixed(3);
+
+            // Tính hệ số trạng thái
+            const cos_half_theta = Math.cos(theta / 2);
+            const sin_half_theta = Math.sin(theta / 2);
+            const exp_phi = { real: Math.cos(phi), imag: Math.sin(phi) };
+
+            // Hệ số cho |0⟩
+            const coeff0 = cos_half_theta;
+            
+            // Hệ số cho |1⟩ (phức)
+            const coeff1_real = exp_phi.real * sin_half_theta;
+            const coeff1_imag = exp_phi.imag * sin_half_theta;
+
+            // Hiển thị trạng thái
+            let stateDisplay = '';
+            if (Math.abs(coeff0) > 0.001) {
+                stateDisplay += `${coeff0.toFixed(3)}|0⟩`;
+            }
+            
+            if (Math.abs(coeff1_real) > 0.001 || Math.abs(coeff1_imag) > 0.001) {
+                if (stateDisplay !== '') stateDisplay += ' + ';
+                
+                if (Math.abs(coeff1_imag) < 0.001) {
+                    stateDisplay += `${coeff1_real.toFixed(3)}|1⟩`;
+                } else if (Math.abs(coeff1_real) < 0.001) {
+                    stateDisplay += `${coeff1_imag.toFixed(3)}i|1⟩`;
+                } else {
+                    const sign = coeff1_imag >= 0 ? '+' : '-';
+                    stateDisplay += `(${coeff1_real.toFixed(3)}${sign}${Math.abs(coeff1_imag).toFixed(3)}i)|1⟩`;
+                }
+            }
+
+            document.getElementById('state-display').textContent = stateDisplay || '0';
+
+            // Cập nhật hiển thị góc
+            document.getElementById('theta-value').textContent = theta.toFixed(2);
+            document.getElementById('phi-value').textContent = phi.toFixed(2);
+        }
+
+        // Xử lý sự kiện thanh trượt
+        document.getElementById('theta').addEventListener('input', (event) => {
+            theta = parseFloat(event.target.value);
+            updateDisplay();
+        });
+
+        document.getElementById('phi').addEventListener('input', (event) => {
+            phi = parseFloat(event.target.value);
+            updateDisplay();
+        });
+
+        // Hàm preset
+        function setPreset(newTheta, newPhi) {
+            theta = newTheta;
+            phi = newPhi;
+            document.getElementById('theta').value = theta;
+            document.getElementById('phi').value = phi;
+            updateDisplay();
+        }
+
+        // Xử lý thay đổi kích thước cửa sổ
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Vòng lặp render
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Xoay nhẹ hình cầu
+            blochSphere.rotation.y += 0.002;
+            solidSphere.rotation.y += 0.002;
+            
+            // Hiệu ứng nhấp nháy cho điểm qubit
+            const time = Date.now() * 0.005;
+            qubitMaterial.emissive.setRGB(
+                0.3 + 0.2 * Math.sin(time),
+                0.1 + 0.1 * Math.sin(time * 1.1),
+                0.1 + 0.1 * Math.sin(time * 0.9)
+            );
+            
+            renderer.render(scene, camera);
+        }
+
+        // Khởi tạo
+        updateDisplay();
+        animate();
+    </script>
+</body>
+</html>
