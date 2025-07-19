@@ -4,6 +4,7 @@
 <img width="743" height="719" alt="image" src="https://github.com/user-attachments/assets/d583c45a-42d8-413f-b932-57e3d9745937" />
 <img width="300" height="216" alt="image" src="https://github.com/user-attachments/assets/3e4fa534-f380-48a9-ad7a-36c822bdbd69" />
 <img width="276" height="284" alt="image" src="https://github.com/user-attachments/assets/2bdd4163-29a7-4435-8f8a-f8f1e7beeb84" />
+<img width="985" height="711" alt="image" src="https://github.com/user-attachments/assets/4d45d0b2-4771-4a69-a856-3384eac5794a" />
 
 # Bloch Sphere Interactive Visualization
 
